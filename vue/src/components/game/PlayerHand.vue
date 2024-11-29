@@ -2,10 +2,12 @@
   <div class="hand-container">
     <div :class="handClass">
       <div
-          class="hand__card"
-          v-for="(card, index) in cards"
-          :key="index"
-          :style="index === 1 ? {'margin-left': '0'} : {}"
+        class="hand__card"
+        v-for="(card, index) in cards"
+        :key="index"
+        :style="applyTransform(index)"
+        @mouseover="handleMouseOver(index)"
+        @mouseleave="handleMouseLeave"
       >
         <GameCard
           :key="index"
@@ -24,21 +26,24 @@
 </template>
 
 <script>
-import GameCard from '@/components/game/GameCard.vue';
-import { mapGetters } from 'vuex';
+import GameCard from "@/components/game/GameCard.vue";
+import { mapGetters } from "vuex";
 
 export default {
   name: 'PlayerHand',
   components: { GameCard },
-  emits: [
-    "onCardDrop",
-  ],
+  emits: ['onCardDrop'],
   props: {
     opponent: {
       type: Boolean,
       required: false,
       default: false,
     },
+  },
+  data() {
+    return {
+      hoveredIndex: null,
+    };
   },
   computed: {
     ...mapGetters('gameEngine', [
@@ -50,9 +55,27 @@ export default {
           this.getGameEngine.player.cards
     },
     handClass() {
-      return this.opponent ? 'hand-opponent': 'hand-player';
-    }
-  }
+      return this.opponent ? "hand-opponent" : "hand-player";
+    },
+  },
+  methods: {
+    applyTransform(index) {
+  const angle = (index - (this.cards.length - 1) / 2) * 10; 
+  const isHovered = this.hoveredIndex === index;
+  return {
+    transform: `rotate(${angle}deg)`,  // Убираем translateY, чтобы не было лишних сдвигов
+    transition: "transform 0.2s ease-out",
+    zIndex: isHovered ? 100 : index,
+  };
+},
+
+    handleMouseOver(index) {
+      this.hoveredIndex = index;
+    },
+    handleMouseLeave() {
+      this.hoveredIndex = null;
+    },
+  },
 };
 </script>
 
@@ -64,14 +87,18 @@ export default {
   width: 80vw;
   margin: auto;
   justify-content: center;
+  perspective: 1000px;
 
   &__card {
     width: 150px;
-    height: 100%;
+    height: 200px;
     display: flex;
     align-items: center;
+    justify-content: center;
+    position: absolute; 
     font-size: 18px;
     color: black;
+    transform-origin: bottom center;
   }
 
   &-player:extend(.hand) {
